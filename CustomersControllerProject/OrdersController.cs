@@ -38,13 +38,17 @@ public class OrdersController {
                     " Where Id = @Id; ";
         var cmd = new SqlCommand(sql, sqlConnection);
         cmd.Parameters.AddWithValue("@Id", order.Id);
-        cmd.Parameters.AddWithValue("@Date", order.Date);
-        cmd.Parameters.AddWithValue("@Description", order.Description);
-        cmd.Parameters.AddWithValue("@CustomerId", order.CustomerId);
+        AddSqlParameters(cmd, order);
         var rowsAffected = cmd.ExecuteNonQuery();
         if(rowsAffected != 1) {
             throw new Exception($"Update failed! RA is {rowsAffected}");
         }
+    }
+
+    private void AddSqlParameters(SqlCommand cmd, Order order) {
+        cmd.Parameters.AddWithValue("@Date", order.Date);
+        cmd.Parameters.AddWithValue("@Description", order.Description);
+        cmd.Parameters.AddWithValue("@CustomerId", order.CustomerId);
     }
 
     public void InsertOrder(Order order) {
@@ -53,21 +57,27 @@ public class OrdersController {
                     " (@Date, @Description, @CustomerId) ";
         var cmd = new SqlCommand(sql, sqlConnection);
         //cmd.Parameters.AddWithValue("@Id", 0);
-        cmd.Parameters.AddWithValue("@Date", order.Date);
-        cmd.Parameters.AddWithValue("@Description", order.Description);
-        cmd.Parameters.AddWithValue("@CustomerId", order.CustomerId);
+        AddSqlParameters(cmd, order);
         var rowsAffected = cmd.ExecuteNonQuery();
         if(rowsAffected != 1) {
             throw new Exception($"Insert failed! RA is {rowsAffected}");
         }
     }
 
+    public void InsertOrder(Order order, string customerCode) {
+        var sql = "SELECT Id From Customers Where Code = @Code;";
+        var cmd = new SqlCommand(sql, sqlConnection);
+        cmd.Parameters.AddWithValue("@Code", customerCode);
+        var custId = Convert.ToInt32(cmd.ExecuteScalar());
+        order.CustomerId = custId;
+        InsertOrder(order);
+    }
+
     public Order? GetOrderById(int id) {
         if(id <= 0) {
             throw new ArgumentException("'id' must be greater than zero");
         }
-        var sql = "SELECT * From Orders Where Id = @Id";
-        var cmd = new SqlCommand(sql, sqlConnection);
+        var cmd = new SqlCommand(Order.SqlGetById, sqlConnection);
         cmd.Parameters.AddWithValue("@Id", id);
         var reader = cmd.ExecuteReader();
         if(!reader.HasRows) {
@@ -75,26 +85,26 @@ public class OrdersController {
             return null;
         }
         reader.Read();
+        var ord = CreateOrderFromReader(reader);
+        reader.Close();
+        return ord;
+    }
+
+    private Order CreateOrderFromReader(SqlDataReader reader) {
         var ord = new Order();
         ord.Id = Convert.ToInt32(reader["Id"]);
         ord.Date = Convert.ToDateTime(reader["Date"]);
         ord.Description = Convert.ToString(reader["Description"]);
         ord.CustomerId = Convert.ToInt32(reader["CustomerId"]);
-        reader.Close();
         return ord;
     }
 
     public List<Order> GetAllOrders() {
-        var sql = "SELECT * From Orders";
-        var cmd = new SqlCommand(sql, sqlConnection);
+        var cmd = new SqlCommand(Order.SqlGetAll, sqlConnection);
         var reader = cmd.ExecuteReader();
         var orders = new List<Order>();
         while(reader.Read()) {
-            var ord = new Order();
-            ord.Id = Convert.ToInt32(reader["Id"]);
-            ord.Date = Convert.ToDateTime(reader["Date"]);
-            ord.Description = Convert.ToString(reader["Description"]);
-            ord.CustomerId = Convert.ToInt32(reader["CustomerId"]);
+            var ord = CreateOrderFromReader(reader);
             orders.Add(ord);
         }
         reader.Close();

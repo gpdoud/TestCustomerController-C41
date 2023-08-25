@@ -16,4 +16,7 @@ public class Order {
     public override string ToString() {
         return $"{Id,2} | {Date} | {Description,-30} | {CustomerId,2}";
     }
+
+    public static string SqlGetAll = "SELECT * From Orders Order by Date;";
+    public static string SqlGetById = "SELECT * From Orders Where Id = @Id;";
 }

@@ -20,14 +20,22 @@ CloseConnection();
 // methods defined here *********************************
 
 void TestOrdersController(SqlConnection conn) {
+    
     var ordCtrl = new OrdersController(conn);
-    var order = ordCtrl.GetOrderById(28);
-    Console.WriteLine(order);
-    //order = new Order() { Id = 0, Date = DateTime.Now, Description = "Test Order", CustomerId = 1 };
-    //ordCtrl.InsertOrder(order);
-    order.Id = 28;
-    order.CustomerId = 2;
-    ordCtrl.UpdateOrder(order);
+    
+    //var order = ordCtrl.GetOrderById(28);
+    //Console.WriteLine(order);
+    
+    var order = new Order() { Id = 0, Date = new DateTime(2023, 8, 27), 
+                           Description = "Test Order For PG", CustomerId = 0 };
+    ordCtrl.InsertOrder(order, "PG");
+    
+    //order.Id = 27;
+    //order.CustomerId = 2;
+    //ordCtrl.UpdateOrder(order);
+
+    //ordCtrl.DeleteOrder(28);
+
     var orders = ordCtrl.GetAllOrders();
     orders.ForEach(x => Console.WriteLine(x));
 }
